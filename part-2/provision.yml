@@ -1,0 +1,42 @@
+---
+- name: 'Provision VM'
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Install Apache
+      apt:
+        name: apache2
+        state: present
+
+    - name: Start Apache
+      service:
+        name: apache2
+        state: started
+
+    - name: Install unzip
+      apt:
+        name: unzip
+        state: present
+
+    - name: Unzip and move website files
+      shell:
+        cmd: |
+          ls -a /home/vagrant/public
+          unzip /home/vagrant/public/Mediplus-Lite-free-css.com.zip -d /var/www/html/
+          mv /var/www/html/mediplus-lite /var/www/html/mediplus-lite.com
+          cp /home/vagrant/public/site.conf /etc/apache2/sites-available/mediplus-lite.com.conf
+
+    - name: Enable new site
+      shell: /usr/sbin/a2ensite mediplus-lite.com
+      notify: Reload Apache
+
+    - name: Disable default Apache site
+      shell: /usr/sbin/a2dissite 000-default.conf
+      notify: Reload Apache
+
+  handlers:
+    - name: Reload Apache
+      service:
+        name: apache2
+        state: reloaded
